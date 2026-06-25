@@ -1,0 +1,127 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$autoloadPaths = [
+    __DIR__ . '/../vendor/autoload.php',      // standalone: own vendor/
+    __DIR__ . '/../../../autoload.php',        // regular composer installation in vendor/
+    __DIR__ . '/../../../vendor/autoload.php', // path-repository inside packages/
+];
+
+$autoloadFound = false;
+foreach ($autoloadPaths as $autoloadPath) {
+    if (file_exists($autoloadPath)) {
+        require $autoloadPath;
+        $autoloadFound = true;
+        break;
+    }
+}
+
+if (!$autoloadFound) {
+    fwrite(STDERR, 'Autoloader not found. Run: composer install' . PHP_EOL);
+    exit(1);
+}
+
+use OliverThiele\FluidLinter\Config\LintConfig;
+use OliverThiele\FluidLinter\Linter;
+use OliverThiele\FluidLinter\Reporter\ConsoleReporter;
+use OliverThiele\FluidLinter\Reporter\GithubActionsReporter;
+use OliverThiele\FluidLinter\Rule\CdataSectionRule;
+use OliverThiele\FluidLinter\Rule\DebugViewHelperRule;
+use OliverThiele\FluidLinter\Rule\FluidFileExtensionRule;
+use OliverThiele\FluidLinter\Rule\HtmlNamespaceAttributeRule;
+use OliverThiele\FluidLinter\Rule\HttpsNamespaceRule;
+use OliverThiele\FluidLinter\Rule\ParseFuncTSPathRule;
+use OliverThiele\FluidLinter\Rule\TypographicQuotesRule;
+use OliverThiele\FluidLinter\Rule\UnderscoreVariableRule;
+use OliverThiele\FluidLinter\Rule\XmlDeclarationRule;
+
+$arguments = array_slice($argv, 1);
+$format = 'console';
+$configFile = null;
+$typo3VersionOverride = null;
+$paths = [];
+
+foreach ($arguments as $argument) {
+    if ($argument === '--format=github') {
+        $format = 'github';
+        continue;
+    }
+    if (str_starts_with($argument, '--config=')) {
+        $configFile = substr($argument, strlen('--config='));
+        continue;
+    }
+    if (str_starts_with($argument, '--typo3-version=')) {
+        $typo3VersionOverride = (int)substr($argument, strlen('--typo3-version='));
+        continue;
+    }
+    if (!str_starts_with($argument, '--')) {
+        $paths[] = $argument;
+    }
+}
+
+if ($paths === []) {
+    fwrite(STDERR, 'Usage: fluid-lint [--format=github] [--config=<file>] [--typo3-version=<major>] <path> [<path>...]' . PHP_EOL);
+    fwrite(STDERR, 'Example: fluid-lint --config=.fluid-lint.live.php packages/' . PHP_EOL);
+    exit(1);
+}
+
+// Load config: explicit --config flag, then auto-detect .fluid-lint.php in CWD
+if ($configFile !== null) {
+    if (!file_exists($configFile)) {
+        fwrite(STDERR, sprintf('Config file not found: %s' . PHP_EOL, $configFile));
+        exit(1);
+    }
+    $config = require $configFile;
+} elseif (file_exists(getcwd() . '/.fluid-lint.php')) {
+    $config = require getcwd() . '/.fluid-lint.php';
+} else {
+    $config = new LintConfig();
+}
+
+if (!$config instanceof LintConfig) {
+    fwrite(STDERR, 'Config file must return an instance of LintConfig.' . PHP_EOL);
+    exit(1);
+}
+
+if ($typo3VersionOverride !== null) {
+    $config->setTypo3Version($typo3VersionOverride);
+}
+
+$linter = new Linter(config: $config);
+$linter->addRule(new TypographicQuotesRule());
+$linter->addRule(new HtmlNamespaceAttributeRule());
+$linter->addRule(new HttpsNamespaceRule());
+$linter->addRule(new UnderscoreVariableRule());
+$linter->addRule(new ParseFuncTSPathRule());
+$linter->addRule(new XmlDeclarationRule());
+$linter->addRule(new CdataSectionRule());
+$linter->addRule(new DebugViewHelperRule());
+$linter->addRule(new FluidFileExtensionRule());
+
+$reporter = $format === 'github' ? new GithubActionsReporter() : new ConsoleReporter();
+
+$results = [];
+foreach ($paths as $path) {
+    if (is_dir($path)) {
+        $results = array_merge($results, $linter->lintDirectory($path));
+    } elseif (is_file($path)) {
+        $results[$path] = $linter->lintFile($path);
+    } else {
+        fwrite(STDERR, sprintf('Path not found: %s' . PHP_EOL, $path));
+        exit(1);
+    }
+}
+
+$reporter->report($results);
+
+foreach ($results as $result) {
+    foreach ($result->getViolations() as $violation) {
+        if ($violation->severity === 'error') {
+            exit(1);
+        }
+    }
+}
+
+exit(0);
