@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-06-26
+
 ### Fixed
 
 - `TypographicQuotesRule`: extended to cover all non-ASCII quote characters that may appear as attribute delimiters — backtick (U+0060), prime/inch marks (U+2032, U+2033), angle quotes (U+00AB, U+00BB, U+2039, U+203A), all four typographic quote variants (U+2018–U+201E); violation message now includes the specific character and its Unicode code point; text content between tags is not flagged
@@ -51,3 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `GithubActionsReporter` — maps severities to `::error`, `::warning`, `::notice` annotations
 - Add `bin/fluid-lint` CLI with `--format=github` and `--typo3-version=<major>` flags
 - Exit code `1` only on `error` severity; `warning` and `info` exit with `0`
+
+[Unreleased]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.3.0...0.4.0
+[0.3.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.2.0...0.3.0
+[0.2.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.1.0...0.2.0
+[0.1.0]: https://github.com/oliverthiele/typo3-fluid-linter/releases/tag/0.1.0
