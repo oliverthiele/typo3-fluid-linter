@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `TypographicQuotesRule`: extended to also detect typographic quotes after `:` in Fluid inline ViewHelper argument syntax (e.g. `{var -> f:format.html(class: «value»)}`); previously only `=` was checked, missing the inline argument separator entirely; violation message updated from "attribute delimiter" to "value delimiter"
 - `XmlDeclarationRule`: implements `FixableFileRuleInterface` — `--fix` removes the `<?xml ...?>` processing instruction line from the file (safe, no `--allow-risky` needed)
 - `ParseFuncTSPathRule`: implements `FixableFileRuleInterface` — `--fix` removes the empty `parseFuncTSPath=""` attribute from the tag; the inline syntax recommendation remains in the violation message since the variable name cannot be inferred statically (safe, no `--allow-risky` needed)
 - `HtmlNamespaceAttributeRule`: implements `FixableFileRuleInterface` — `--fix` inserts `data-namespace-typo3-fluid="true"` before the closing `>` of the `<html>` opening tag (safe, no `--allow-risky` needed)

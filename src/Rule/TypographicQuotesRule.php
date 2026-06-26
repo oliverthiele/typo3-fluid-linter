@@ -6,9 +6,14 @@ namespace OliverThiele\FluidLinter\Rule;
 
 final class TypographicQuotesRule implements RuleInterface
 {
-    // Matches any non-ASCII quote character immediately after an = sign in an HTML/Fluid attribute.
-    // Only the position right after = is checked — the same characters in text content between
-    // tags (e.g. 1/2″ inside <f:case>) are intentional and never flagged.
+    // Matches any non-ASCII quote character immediately after = (HTML/Fluid tag attribute)
+    // or : (Fluid inline ViewHelper argument, e.g. {var -> f:format.html(class: «container»)}).
+    // Only these two positions are checked — the same characters in text content between tags
+    // (e.g. «quoted text» in a <p>) are intentional prose and never flagged.
+    //
+    // Known limitation: prose text containing `word: «quote»` directly in a template would be
+    // flagged as a false positive. In practice this is rare — Fluid templates keep translated
+    // text in .xlf files, not inline.
     //
     // Characters covered:
     //   U+0060  `   GRAVE ACCENT (backtick)
@@ -24,7 +29,7 @@ final class TypographicQuotesRule implements RuleInterface
     //   U+2033  ″   DOUBLE PRIME (inch mark)
     //   U+2039  ‹   SINGLE LEFT-POINTING ANGLE QUOTATION MARK
     //   U+203A  ›   SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
-    private const PATTERN = '/=\s*([\x{0060}\x{00AB}\x{00BB}\x{2018}\x{2019}\x{201A}\x{201C}\x{201D}\x{201E}\x{2032}\x{2033}\x{2039}\x{203A}])/u';
+    private const PATTERN = '/[=:]\s*([\x{0060}\x{00AB}\x{00BB}\x{2018}\x{2019}\x{201A}\x{201C}\x{201D}\x{201E}\x{2032}\x{2033}\x{2039}\x{203A}])/u';
 
     public function getName(): string
     {
@@ -39,7 +44,7 @@ final class TypographicQuotesRule implements RuleInterface
 
         $character = $matches[1];
         return [['line' => $lineNumber, 'message' => sprintf(
-            'Invalid quote character "%s" (U+%04X) used as attribute delimiter — only straight ASCII quotes (" or \') are valid in HTML attributes and Fluid ViewHelpers.',
+            'Invalid quote character "%s" (U+%04X) used as value delimiter — only straight ASCII quotes (" or \') are valid in HTML attributes and Fluid ViewHelper arguments.',
             $character,
             mb_ord($character),
         )]];
