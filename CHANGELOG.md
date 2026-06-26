@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-06-26
+
 ### Added
 
 - Add `DeprecatedViewHelperRule` — detects ViewHelpers and arguments that were deprecated or removed in a specific TYPO3 version; requires `--typo3-version=<major>`; each entry references the TYPO3 changelog URL as a source comment:
@@ -67,7 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `bin/fluid-lint` CLI with `--format=github` and `--typo3-version=<major>` flags
 - Exit code `1` only on `error` severity; `warning` and `info` exit with `0`
 
-[Unreleased]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.1.0...0.2.0
