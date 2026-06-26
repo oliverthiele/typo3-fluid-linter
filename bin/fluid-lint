@@ -29,6 +29,7 @@ use OliverThiele\FluidLinter\Reporter\ConsoleReporter;
 use OliverThiele\FluidLinter\Reporter\GithubActionsReporter;
 use OliverThiele\FluidLinter\Rule\CdataSectionRule;
 use OliverThiele\FluidLinter\Rule\DebugViewHelperRule;
+use OliverThiele\FluidLinter\Rule\DeprecatedViewHelperRule;
 use OliverThiele\FluidLinter\Rule\FluidFileExtensionRule;
 use OliverThiele\FluidLinter\Rule\HtmlNamespaceAttributeRule;
 use OliverThiele\FluidLinter\Rule\HttpsNamespaceRule;
@@ -99,6 +100,7 @@ $linter->addRule(new XmlDeclarationRule());
 $linter->addRule(new CdataSectionRule());
 $linter->addRule(new DebugViewHelperRule());
 $linter->addRule(new FluidFileExtensionRule());
+$linter->addRule(new DeprecatedViewHelperRule($config->getTypo3Version() ?? 0));
 
 $reporter = $format === 'github' ? new GithubActionsReporter() : new ConsoleReporter();
 

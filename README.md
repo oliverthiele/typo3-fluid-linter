@@ -31,6 +31,7 @@ The alternative — asking a second LLM to review every generated template for e
 - **CDATA section detection** — flags `<![CDATA[...]]>` inside `<f:comment>` blocks, the old pattern for safely commenting out Fluid code; deprecated in Fluid 4 and removed in Fluid 5; legitimate CDATA in XML/RSS templates and `{{{expression}}}` output syntax are not flagged
 - **XML declaration warning** — flags the `<?xml ...?>` processing instruction, which is unnecessary in Fluid templates and may trigger Quirks Mode
 - **Debug ViewHelper detection** — flags `<f:debug>` usage to prevent debug output from reaching production; configurable as `warning` (development) or `error` (live gate)
+- **Deprecated ViewHelper detection** — flags ViewHelpers and arguments that were deprecated or removed in a specific TYPO3 version: all `<f:widget.*>` (removed v11), `getVars` on `<be:moduleLayout.button.shortcutButton>` (deprecated v11), `<f:be.container>` (deprecated v11.3), `<f:be.buttons.shortcut>` and `<f:base>` (removed v12), `<f:be.buttons.csh>` and `<f:be.labels.csh>` (removed v13), `<f:debug.render>` and `useNonce` on `<f:asset.*>` (deprecated v14.2); requires `--typo3-version=<major>`
 - **Config file support** — per-project `.fluid-lint.php` with rule severity overrides; separate live config for CI release gates
 - **Version-aware rules** — pass `--typo3-version=14` to activate rules specific to a TYPO3 major version
 - **Three severity levels** — `error` (exit code 1), `warning`, and `info` (both exit code 0)
@@ -168,6 +169,7 @@ Exit codes:
 | `<?xml ...?>` processing instruction is unnecessary in Fluid templates | `xml-declaration` | warning | all |
 | `f:debug` ViewHelper found — remove before going live | `debug-viewhelper` | warning | all |
 | Both `.html` and `.fluid.html` counterpart exist | `fluid-file-extension` | warning | 14+ |
+| Deprecated or removed ViewHelper/argument — `f:widget.*` (removed v11), `getVars` arg (deprecated v11), `f:be.container` (deprecated v11.3), `f:be.buttons.shortcut` + `f:base` (removed v12), `f:be.buttons.csh` + `f:be.labels.csh` (removed v13), `f:debug.render` + `useNonce` (deprecated v14.2) | `deprecated-viewhelper` | error / warning | 11+ |
 
 ---
 

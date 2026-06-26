@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `DeprecatedViewHelperRule` — detects ViewHelpers and arguments that were deprecated or removed in a specific TYPO3 version; requires `--typo3-version=<major>`; each entry references the TYPO3 changelog URL as a source comment:
+  - `<f:widget.*>` — all Fluid widget ViewHelpers were completely removed in TYPO3 v11; for pagination use the PHP `PaginationInterface` API (error)
+  - `getVars` argument on `<be:moduleLayout.button.shortcutButton>` — deprecated in TYPO3 v11; use `arguments` instead (warning)
+  - `<f:be.container>` — deprecated in TYPO3 v11.3; use `<f:be.pageRenderer>` (warning)
+  - `<f:be.buttons.shortcut>` — removed in TYPO3 v12 (deprecated in v11); use `<be:moduleLayout.button.shortcutButton arguments="...">` (error)
+  - `<f:base>` — removed in TYPO3 v12 (deprecated in v11.3); use TypoScript `config.baseURL` (error)
+  - `<f:be.buttons.csh>` — removed in TYPO3 v13 (error)
+  - `<f:be.labels.csh>` — removed in TYPO3 v13 (error)
+  - `<f:debug.render>` — deprecated in TYPO3 v14.2, removal planned for v15; create a custom ViewHelper if needed (warning)
+  - `useNonce` argument on `<f:asset.*>` — deprecated in TYPO3 v14.2; use `csp="1"` instead (warning)
+
 ## [0.4.0] — 2026-06-26
 
 ### Fixed
