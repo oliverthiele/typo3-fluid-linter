@@ -146,6 +146,8 @@ Currently fixable rules:
 
 | Rule | Fix | Risky? |
 |------|-----|--------|
+| `html-namespace-attribute` | Insert `data-namespace-typo3-fluid="true"` into the `<html>` opening tag | No |
+| `https-namespace` | Replace `https://typo3.org/ns/` with `http://typo3.org/ns/` (all occurrences) | No |
 | `fluid-file-extension` (info) | Rename `Template.html` → `Template.fluid.html` | No |
 | `fluid-file-extension` (warning) | Delete `Template.html` (`.fluid.html` counterpart kept) | Yes |
 
