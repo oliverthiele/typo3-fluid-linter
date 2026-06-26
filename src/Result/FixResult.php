@@ -9,5 +9,6 @@ final class FixResult
     public function __construct(
         public readonly FixStatus $status,
         public readonly string $description,
-    ) {}
+    ) {
+    }
 }

@@ -45,7 +45,7 @@ The alternative — asking a second LLM to review every generated template for e
 
 | Requirement | Version |
 |-------------|---------|
-| PHP         | >=8.2   |
+| PHP         | >= 8.2  |
 
 ---
 

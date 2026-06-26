@@ -53,18 +53,18 @@ final class ParseFuncTSPathRule implements RuleInterface, FixableFileRuleInterfa
 
         if ($hasTag) {
             // Remove the empty attribute including any leading whitespace.
-            $newContent = preg_replace('/\s*parseFuncTSPath\s*=\s*(["\'])\s*\1/', '', $newContent);
+            $newContent = preg_replace('/\s*parseFuncTSPath\s*=\s*(["\'])\s*\1/', '', $newContent) ?? $newContent;
         }
 
         if ($hasInline) {
             // Two passes to avoid PCRE backreference numbering issues with alternation.
             // Pass 1: last/middle arg — eat the leading comma.
-            $newContent = preg_replace('/,\s*parseFuncTSPath\s*:\s*(["\'])\s*\1/', '', $newContent);
+            $newContent = preg_replace('/,\s*parseFuncTSPath\s*:\s*(["\'])\s*\1/', '', $newContent) ?? $newContent;
             // Pass 2: first/only arg — eat trailing comma+space if present.
-            $newContent = preg_replace('/parseFuncTSPath\s*:\s*(["\'])\s*\1\s*,?\s*/', '', $newContent);
+            $newContent = preg_replace('/parseFuncTSPath\s*:\s*(["\'])\s*\1\s*,?\s*/', '', $newContent) ?? $newContent;
         }
 
-        if ($newContent === null || $newContent === $content) {
+        if ($newContent === $content) {
             return new FixResult(FixStatus::None, '');
         }
 

@@ -88,7 +88,9 @@ final class DeprecatedViewHelperRule implements FileRuleInterface, VersionedRule
         ],
     ];
 
-    public function __construct(private readonly int $typo3Version = 0) {}
+    public function __construct(private readonly int $typo3Version = 0)
+    {
+    }
 
     public function getName(): string
     {
