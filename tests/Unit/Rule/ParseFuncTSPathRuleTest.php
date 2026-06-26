@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OliverThiele\FluidLinter\Tests\Unit\Rule;
 
+use OliverThiele\FluidLinter\Result\FixStatus;
 use OliverThiele\FluidLinter\Rule\ParseFuncTSPathRule;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -12,10 +13,29 @@ use PHPUnit\Framework\TestCase;
 final class ParseFuncTSPathRuleTest extends TestCase
 {
     private ParseFuncTSPathRule $rule;
+    /** @var list<string> */
+    private array $tempFiles = [];
 
     protected function setUp(): void
     {
         $this->rule = new ParseFuncTSPathRule();
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->tempFiles as $tempFile) {
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+        }
+    }
+
+    private function writeTempFile(string $content): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'fluid-linter-test-') . '.html';
+        file_put_contents($path, $content);
+        $this->tempFiles[] = $path;
+        return $path;
     }
 
     #[Test]
@@ -49,5 +69,43 @@ final class ParseFuncTSPathRuleTest extends TestCase
             'inline notation without parseFuncTSPath' => ['{field -> f:format.html()}'],
             'unrelated attribute named similar' => ['<tag parseFuncPath="">'],
         ];
+    }
+
+    #[Test]
+    public function fixRemovesEmptyParseFuncTSPathAttribute(): void
+    {
+        $content = '<f:format.html parseFuncTSPath="" value="{bodytext}" />';
+        $filePath = $this->writeTempFile($content);
+
+        $result = $this->rule->fix($filePath, false);
+
+        self::assertSame(FixStatus::Applied, $result->status);
+        $fixed = file_get_contents($filePath);
+        self::assertStringNotContainsString('parseFuncTSPath', $fixed);
+        self::assertStringContainsString('value="{bodytext}"', $fixed);
+    }
+
+    #[Test]
+    public function fixRemovesAttributeWithSingleQuotes(): void
+    {
+        $content = "<f:format.html parseFuncTSPath='' />";
+        $filePath = $this->writeTempFile($content);
+
+        $result = $this->rule->fix($filePath, false);
+
+        self::assertSame(FixStatus::Applied, $result->status);
+        self::assertStringNotContainsString('parseFuncTSPath', file_get_contents($filePath));
+    }
+
+    #[Test]
+    public function fixDoesNotTouchNonEmptyParseFuncTSPath(): void
+    {
+        $content = '<f:format.html parseFuncTSPath="lib.parseFunc_RTE" />';
+        $filePath = $this->writeTempFile($content);
+
+        $result = $this->rule->fix($filePath, false);
+
+        self::assertSame(FixStatus::None, $result->status);
+        self::assertSame($content, file_get_contents($filePath));
     }
 }

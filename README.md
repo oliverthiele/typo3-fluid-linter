@@ -146,6 +146,8 @@ Currently fixable rules:
 
 | Rule | Fix | Risky? |
 |------|-----|--------|
+| `xml-declaration` | Remove the `<?xml ...?>` processing instruction line | No |
+| `parsefunc-tspath` | Remove the empty `parseFuncTSPath=""` attribute from the tag | No |
 | `html-namespace-attribute` | Insert `data-namespace-typo3-fluid="true"` into the `<html>` opening tag | No |
 | `https-namespace` | Replace `https://typo3.org/ns/` with `http://typo3.org/ns/` (all occurrences) | No |
 | `fluid-file-extension` (info) | Rename `Template.html` → `Template.fluid.html` | No |

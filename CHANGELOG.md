@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `XmlDeclarationRule`: implements `FixableFileRuleInterface` — `--fix` removes the `<?xml ...?>` processing instruction line from the file (safe, no `--allow-risky` needed)
+- `ParseFuncTSPathRule`: implements `FixableFileRuleInterface` — `--fix` removes the empty `parseFuncTSPath=""` attribute from the tag; the inline syntax recommendation remains in the violation message since the variable name cannot be inferred statically (safe, no `--allow-risky` needed)
 - `HtmlNamespaceAttributeRule`: implements `FixableFileRuleInterface` — `--fix` inserts `data-namespace-typo3-fluid="true"` before the closing `>` of the `<html>` opening tag (safe, no `--allow-risky` needed)
 - `HttpsNamespaceRule`: implements `FixableFileRuleInterface` — `--fix` replaces all occurrences of `https://typo3.org/ns/` with `http://typo3.org/ns/` in-place (safe, no `--allow-risky` needed)
 - `FluidFileExtensionRule`: `info` migration hint now only fires when the same directory already contains at least one `.fluid.html` file — signals an actively migrating project; previously always-silent directories stay silent
