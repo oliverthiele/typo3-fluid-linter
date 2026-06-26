@@ -127,8 +127,18 @@ foreach ($paths as $path) {
 
 $reporter->report($results);
 
-// Apply automatic fixes when --fix is given
-$fixedFiles = [];
+// Apply automatic fixes when --fix is given.
+// Fix messages always go to STDERR so they don't pollute --format=json or --format=github stdout.
+// At most one fix is applied per file per run: after a successful fix the file content on disk
+// has changed, so subsequent rules must not operate on stale violation data. Re-run fluid-lint
+// to apply further fixes.
+//
+// $fixedRules tracks which (file, rule) pairs were successfully fixed, so the exit-code check
+// below only ignores those specific violations — unfixable violations in the same file still
+// contribute to the exit code.
+/** @var array<string, array<string, true>> $fixedRules  keyed by filePath → ruleName */
+$fixedRules = [];
+
 if ($fix) {
     $ruleMap = [];
     foreach ($linter->getRules() as $rule) {
@@ -159,35 +169,40 @@ if ($fix) {
 
             if ($fixResult->status === FixStatus::Applied) {
                 $appliedCount++;
-                $fixedFiles[] = $filePath;
-                echo sprintf('  FIXED  %s: %s' . PHP_EOL, $filePath, $fixResult->description);
+                $fixedRules[$filePath][$violation->rule] = true;
+                fwrite(STDERR, sprintf('  FIXED  %s: %s' . PHP_EOL, $filePath, $fixResult->description));
+                // Stop after the first successful fix for this file: the file on disk has changed
+                // and subsequent rules would operate on stale violation data.
+                break;
             } elseif ($fixResult->status === FixStatus::Skipped) {
                 $skippedCount++;
-                echo sprintf('  SKIP   %s: %s' . PHP_EOL, $filePath, $fixResult->description);
+                fwrite(STDERR, sprintf('  SKIP   %s: %s' . PHP_EOL, $filePath, $fixResult->description));
             }
         }
     }
 
     if ($appliedCount > 0 || $skippedCount > 0) {
-        echo PHP_EOL;
+        fwrite(STDERR, PHP_EOL);
         if ($appliedCount > 0) {
-            echo sprintf('Applied %d fix(es).', $appliedCount) . PHP_EOL;
+            fwrite(STDERR, sprintf('Applied %d fix(es).' . PHP_EOL, $appliedCount));
         }
         if ($skippedCount > 0) {
-            echo sprintf('%d fix(es) skipped — add --allow-risky to apply destructive operations.', $skippedCount) . PHP_EOL;
+            fwrite(STDERR, sprintf('%d fix(es) skipped — add --allow-risky to apply destructive operations.' . PHP_EOL, $skippedCount));
         }
     }
 }
 
-// Exit code: only consider violations in files that were not successfully fixed
+// Exit code: only skip violations that were actually fixed (rule-level granularity).
+// A file with one fixed and one unfixed error still exits with code 1.
 foreach ($results as $filePath => $result) {
-    if (in_array($filePath, $fixedFiles, true)) {
-        continue;
-    }
     foreach ($result->getViolations() as $violation) {
-        if ($violation->severity === 'error') {
-            exit(1);
+        if ($violation->severity !== 'error') {
+            continue;
         }
+        if (isset($fixedRules[$filePath][$violation->rule])) {
+            continue;
+        }
+        exit(1);
     }
 }
 
