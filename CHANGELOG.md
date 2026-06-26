@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `FluidFileExtensionRule`: `info` migration hint now only fires when the same directory already contains at least one `.fluid.html` file — signals an actively migrating project; previously always-silent directories stay silent
+- `FluidFileExtensionRule`: implements `FixableFileRuleInterface` — `--fix` renames `.html` → `.fluid.html` (safe); `--fix --allow-risky` additionally deletes orphaned `.html` files when a `.fluid.html` counterpart already exists (destructive, requires explicit opt-in)
+- `FixableFileRuleInterface` — new interface for rules that can automatically correct their own violations
+- `FixResult` / `FixStatus` — value objects returned by `fix()` (Applied, Skipped, None)
+- `Linter::getRules()` — returns the registered rule list for use by fix orchestration in `bin/fluid-lint`
+- `JsonReporter` — `--format=json` emits structured JSON to stdout; shape: `{ "violations": [...], "summary": { "errors", "warnings", "infos", "files_checked", "files_with_violations" } }`; useful for IDE integrations and pre-commit hooks
+- `TODO.md` — captures planned features, new rule ideas, ideas from compared linters, and future format/config extensions
+
+### Changed
+
+- README: corrected the "Why" section — existing AST-based Fluid linters (Fluid.Lint, fluid-lint) do exist; this tool takes a different, zero-dependency approach targeting encoding artifacts, deprecated ViewHelpers, and Fluid 5 changes
+
+## [0.5.0] — 2026-06-26
+
+### Added
+
 - Add `DeprecatedViewHelperRule` — detects ViewHelpers and arguments that were deprecated or removed in a specific TYPO3 version; requires `--typo3-version=<major>`; each entry references the TYPO3 changelog URL as a source comment:
   - `<f:widget.*>` — all Fluid widget ViewHelpers were completely removed in TYPO3 v11; for pagination use the PHP `PaginationInterface` API (error)
   - `getVars` argument on `<be:moduleLayout.button.shortcutButton>` — deprecated in TYPO3 v11; use `arguments` instead (warning)

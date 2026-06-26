@@ -27,9 +27,12 @@ use OliverThiele\FluidLinter\Config\LintConfig;
 use OliverThiele\FluidLinter\Linter;
 use OliverThiele\FluidLinter\Reporter\ConsoleReporter;
 use OliverThiele\FluidLinter\Reporter\GithubActionsReporter;
+use OliverThiele\FluidLinter\Reporter\JsonReporter;
+use OliverThiele\FluidLinter\Result\FixStatus;
 use OliverThiele\FluidLinter\Rule\CdataSectionRule;
 use OliverThiele\FluidLinter\Rule\DebugViewHelperRule;
 use OliverThiele\FluidLinter\Rule\DeprecatedViewHelperRule;
+use OliverThiele\FluidLinter\Rule\FixableFileRuleInterface;
 use OliverThiele\FluidLinter\Rule\FluidFileExtensionRule;
 use OliverThiele\FluidLinter\Rule\HtmlNamespaceAttributeRule;
 use OliverThiele\FluidLinter\Rule\HttpsNamespaceRule;
@@ -42,13 +45,15 @@ $arguments = array_slice($argv, 1);
 $format = 'console';
 $configFile = null;
 $typo3VersionOverride = null;
+$fix = false;
+$allowRisky = false;
 $paths = [];
 
 foreach ($arguments as $argument) {
-    if ($argument === '--format=github') {
-        $format = 'github';
-        continue;
-    }
+    if ($argument === '--format=github') { $format = 'github'; continue; }
+    if ($argument === '--format=json')   { $format = 'json';   continue; }
+    if ($argument === '--fix')           { $fix = true;        continue; }
+    if ($argument === '--allow-risky')   { $allowRisky = true; continue; }
     if (str_starts_with($argument, '--config=')) {
         $configFile = substr($argument, strlen('--config='));
         continue;
@@ -63,7 +68,7 @@ foreach ($arguments as $argument) {
 }
 
 if ($paths === []) {
-    fwrite(STDERR, 'Usage: fluid-lint [--format=github] [--config=<file>] [--typo3-version=<major>] <path> [<path>...]' . PHP_EOL);
+    fwrite(STDERR, 'Usage: fluid-lint [--format=github|json] [--fix [--allow-risky]] [--config=<file>] [--typo3-version=<major>] <path> [<path>...]' . PHP_EOL);
     fwrite(STDERR, 'Example: fluid-lint --config=.fluid-lint.live.php packages/' . PHP_EOL);
     exit(1);
 }
@@ -102,7 +107,11 @@ $linter->addRule(new DebugViewHelperRule());
 $linter->addRule(new FluidFileExtensionRule());
 $linter->addRule(new DeprecatedViewHelperRule($config->getTypo3Version() ?? 0));
 
-$reporter = $format === 'github' ? new GithubActionsReporter() : new ConsoleReporter();
+$reporter = match ($format) {
+    'github' => new GithubActionsReporter(),
+    'json'   => new JsonReporter(),
+    default  => new ConsoleReporter(),
+};
 
 $results = [];
 foreach ($paths as $path) {
@@ -118,7 +127,63 @@ foreach ($paths as $path) {
 
 $reporter->report($results);
 
-foreach ($results as $result) {
+// Apply automatic fixes when --fix is given
+$fixedFiles = [];
+if ($fix) {
+    $ruleMap = [];
+    foreach ($linter->getRules() as $rule) {
+        $ruleMap[$rule->getName()] = $rule;
+    }
+
+    $appliedCount = 0;
+    $skippedCount = 0;
+
+    foreach ($results as $filePath => $result) {
+        if (!$result->hasViolations()) {
+            continue;
+        }
+
+        $processedRules = [];
+        foreach ($result->getViolations() as $violation) {
+            if (isset($processedRules[$violation->rule])) {
+                continue;
+            }
+            $processedRules[$violation->rule] = true;
+
+            $rule = $ruleMap[$violation->rule] ?? null;
+            if (!$rule instanceof FixableFileRuleInterface) {
+                continue;
+            }
+
+            $fixResult = $rule->fix($filePath, $allowRisky);
+
+            if ($fixResult->status === FixStatus::Applied) {
+                $appliedCount++;
+                $fixedFiles[] = $filePath;
+                echo sprintf('  FIXED  %s: %s' . PHP_EOL, $filePath, $fixResult->description);
+            } elseif ($fixResult->status === FixStatus::Skipped) {
+                $skippedCount++;
+                echo sprintf('  SKIP   %s: %s' . PHP_EOL, $filePath, $fixResult->description);
+            }
+        }
+    }
+
+    if ($appliedCount > 0 || $skippedCount > 0) {
+        echo PHP_EOL;
+        if ($appliedCount > 0) {
+            echo sprintf('Applied %d fix(es).', $appliedCount) . PHP_EOL;
+        }
+        if ($skippedCount > 0) {
+            echo sprintf('%d fix(es) skipped — add --allow-risky to apply destructive operations.', $skippedCount) . PHP_EOL;
+        }
+    }
+}
+
+// Exit code: only consider violations in files that were not successfully fixed
+foreach ($results as $filePath => $result) {
+    if (in_array($filePath, $fixedFiles, true)) {
+        continue;
+    }
     foreach ($result->getViolations() as $violation) {
         if ($violation->severity === 'error') {
             exit(1);
