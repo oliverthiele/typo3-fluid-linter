@@ -5,7 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.0] — 2026-06-26
+
+### Added
+
+- `TypographicQuotesRule`: extended to also detect typographic quotes after `:` in Fluid inline ViewHelper argument syntax (e.g. `{var -> f:format.html(class: «value»)}`); previously only `=` was checked, missing the inline argument separator entirely; violation message updated from "attribute delimiter" to "value delimiter"
+- `XmlDeclarationRule`: implements `FixableFileRuleInterface` — `--fix` removes the `<?xml ...?>` processing instruction line from the file (safe, no `--allow-risky` needed)
+- `ParseFuncTSPathRule`: extended to detect empty `parseFuncTSPath` in both tag syntax (`parseFuncTSPath=""`) and Fluid inline syntax (`parseFuncTSPath: ''`); `--fix` removes the attribute/argument in both forms, with correct comma handling for inline calls that have other arguments alongside it (safe, no `--allow-risky` needed)
+- `HtmlNamespaceAttributeRule`: implements `FixableFileRuleInterface` — `--fix` inserts `data-namespace-typo3-fluid="true"` before the closing `>` of the `<html>` opening tag (safe, no `--allow-risky` needed)
+- `HttpsNamespaceRule`: implements `FixableFileRuleInterface` — `--fix` replaces all occurrences of `https://typo3.org/ns/` with `http://typo3.org/ns/` in-place (safe, no `--allow-risky` needed)
+- `FluidFileExtensionRule`: `info` migration hint now only fires when the same directory already contains at least one `.fluid.html` file — signals an actively migrating project; previously always-silent directories stay silent
+- `FluidFileExtensionRule`: implements `FixableFileRuleInterface` — `--fix` renames `.html` → `.fluid.html` (safe); `--fix --allow-risky` additionally deletes orphaned `.html` files when a `.fluid.html` counterpart already exists (destructive, requires explicit opt-in)
+- `FixableFileRuleInterface` — new interface for rules that can automatically correct their own violations
+- `FixResult` / `FixStatus` — value objects returned by `fix()` (Applied, Skipped, None)
+- `Linter::getRules()` — returns the registered rule list for use by fix orchestration in `bin/fluid-lint`
+- `JsonReporter` — `--format=json` emits structured JSON to stdout; shape: `{ "violations": [...], "summary": { "errors", "warnings", "infos", "files_checked", "files_with_violations" } }`; useful for IDE integrations and pre-commit hooks
+- `TODO.md` — captures planned features, new rule ideas, ideas from compared linters, and future format/config extensions
+
+### Changed
+
+- README: corrected the "Why" section — existing AST-based Fluid linters (Fluid.Lint, fluid-lint) do exist; this tool takes a different, zero-dependency approach targeting encoding artifacts, deprecated ViewHelpers, and Fluid 5 changes
+
+## [0.5.0] — 2026-06-26
 
 ## [0.5.0] — 2026-06-26
 
@@ -69,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `bin/fluid-lint` CLI with `--format=github` and `--typo3-version=<major>` flags
 - Exit code `1` only on `error` severity; `warning` and `info` exit with `0`
 
-[Unreleased]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.2.0...0.3.0

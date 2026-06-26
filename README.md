@@ -11,7 +11,7 @@ A CLI linter for TYPO3 Fluid templates that catches encoding errors, deprecated 
 
 ## Why TYPO3 Fluid Linter?
 
-No dedicated linter for TYPO3 Fluid templates exists. Generic HTML linters do not understand Fluid syntax, and TYPO3's own rendering engine only catches errors at runtime — often in production. This tool runs as part of your CI/CD pipeline and catches entire classes of mistakes that are otherwise invisible until a page breaks.
+Existing Fluid linters ([Fluid.Lint](https://github.com/NamelessCoder/fluid-lint), [fluid-lint](https://github.com/typo3fluid/fluid-lint)) take an AST-based approach: they parse templates using the Fluid engine itself, which requires `typo3fluid/fluid` as a dependency and catches structural syntax errors. This tool takes a different approach — **regex-based, zero dependency, no TYPO3 required** — and targets a different class of problems: encoding artifacts from AI-assisted development, deprecated ViewHelper usage across TYPO3 versions, and Fluid 5 breaking changes. Both approaches are complementary.
 
 ### Designed for AI-assisted development
 
@@ -36,6 +36,7 @@ The alternative — asking a second LLM to review every generated template for e
 - **Version-aware rules** — pass `--typo3-version=14` to activate rules specific to a TYPO3 major version
 - **Three severity levels** — `error` (exit code 1), `warning`, and `info` (both exit code 0)
 - **GitHub Actions integration** — `--format=github` emits inline annotations with correct severity levels directly in pull request diffs
+- **JSON output** — `--format=json` emits structured JSON for IDE plugins, pre-commit hooks, and custom tooling
 - **Zero TYPO3 dependency** — runs standalone in any PHP 8.2+ environment; no TYPO3 core required
 
 ---
@@ -44,7 +45,7 @@ The alternative — asking a second LLM to review every generated template for e
 
 | Requirement | Version |
 |-------------|---------|
-| PHP         | >=8.2   |
+| PHP         | >= 8.2  |
 
 ---
 
@@ -127,6 +128,31 @@ return (new LintConfig())
     ->disableRule('fluid-file-extension'); // ignore .html / .fluid.html coexistence
 ```
 
+### Automatic fixes
+
+The `--fix` flag applies safe fixes automatically. Destructive operations (deleting files) additionally require `--allow-risky`:
+
+```bash
+# Rename .html → .fluid.html for files in partially migrated directories (safe)
+vendor/bin/fluid-lint --fix --typo3-version=14 packages/
+
+# Also delete orphaned .html files where .fluid.html already exists (destructive)
+vendor/bin/fluid-lint --fix --allow-risky --typo3-version=14 packages/
+```
+
+> **Warning:** `--allow-risky` permanently deletes files. Ensure your project is under version control before using it.
+
+Currently fixable rules:
+
+| Rule | Fix | Risky? |
+|------|-----|--------|
+| `xml-declaration` | Remove the `<?xml ...?>` processing instruction line | No |
+| `parsefunc-tspath` | Remove the empty `parseFuncTSPath=""` attribute from the tag | No |
+| `html-namespace-attribute` | Insert `data-namespace-typo3-fluid="true"` into the `<html>` opening tag | No |
+| `https-namespace` | Replace `https://typo3.org/ns/` with `http://typo3.org/ns/` (all occurrences) | No |
+| `fluid-file-extension` (info) | Rename `Template.html` → `Template.fluid.html` | No |
+| `fluid-file-extension` (warning) | Delete `Template.html` (`.fluid.html` counterpart kept) | Yes |
+
 ### GitHub Actions
 
 ```yaml
@@ -148,10 +174,13 @@ For a release gate that also blocks on `f:debug`:
 ## CLI
 
 ```
-Usage: fluid-lint [--format=github] [--config=<file>] [--typo3-version=<major>] <path> [<path>...]
+Usage: fluid-lint [--format=github|json] [--fix [--allow-risky]] [--config=<file>] [--typo3-version=<major>] <path> [<path>...]
 
 Options:
   --format=github          Emit GitHub Actions annotation format instead of console output
+  --format=json            Emit structured JSON (violations array + summary object)
+  --fix                    Apply safe automatic fixes (rename .html → .fluid.html)
+  --allow-risky            Also apply destructive fixes (delete files) — requires --fix
   --config=<file>          Load rule configuration from a PHP file returning a LintConfig instance
   --typo3-version=<major>  Activate version-specific rules (e.g. --typo3-version=14)
 
@@ -179,7 +208,8 @@ Exit codes:
 | `<![CDATA[` inside `<f:comment>` — deprecated in Fluid 4, removed in Fluid 5 | `cdata-section` | error | all |
 | `<?xml ...?>` processing instruction is unnecessary in Fluid templates | `xml-declaration` | warning | all |
 | `f:debug` ViewHelper found — remove before going live | `debug-viewhelper` | warning | all |
-| Both `.html` and `.fluid.html` counterpart exist | `fluid-file-extension` | warning | 14+ |
+| `.html` file has a `.fluid.html` counterpart — conflict, TYPO3 v14 may load the wrong file | `fluid-file-extension` | warning | 14+ |
+| `.html` file has no `.fluid.html` counterpart — migration hint for v14 | `fluid-file-extension` | info | 14+ |
 | Deprecated or removed ViewHelper/argument — `f:widget.*` (removed v11), `getVars` arg (deprecated v11), `f:be.container` (deprecated v11.3), `f:be.buttons.shortcut` + `f:base` (removed v12), `f:be.buttons.csh` + `f:be.labels.csh` (removed v13), `f:debug.render` + `useNonce` (deprecated v14.2) | `deprecated-viewhelper` | error / warning | 11+ |
 
 ---

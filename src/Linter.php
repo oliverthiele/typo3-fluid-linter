@@ -28,6 +28,12 @@ final class Linter
         $this->rules[] = $rule;
     }
 
+    /** @return list<RuleInterface|FileRuleInterface> */
+    public function getRules(): array
+    {
+        return $this->rules;
+    }
+
     public function lintFile(string $filePath): LintResult
     {
         $result = new LintResult();
