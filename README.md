@@ -116,6 +116,17 @@ return (new LintConfig())
     ->rule('debug-viewhelper', severity: 'error');
 ```
 
+To disable a rule entirely, use `disableRule()`:
+
+```php
+<?php
+use OliverThiele\FluidLinter\Config\LintConfig;
+
+return (new LintConfig())
+    ->disableRule('xml-declaration')       // never flag <?xml ?>
+    ->disableRule('fluid-file-extension'); // ignore .html / .fluid.html coexistence
+```
+
 ### GitHub Actions
 
 ```yaml
