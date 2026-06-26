@@ -9,9 +9,14 @@ use OliverThiele\FluidLinter\Result\FixStatus;
 
 final class ParseFuncTSPathRule implements RuleInterface, FixableFileRuleInterface
 {
-    // Only an empty parseFuncTSPath="" / parseFuncTSPath='' causes a runtime error.
-    // A non-empty value like parseFuncTSPath="lib.parseFunc_RTE" is still valid.
-    private const PATTERN = '/parseFuncTSPath\s*=\s*(["\'])\s*\1/';
+    // Tag-based syntax: <f:format.html parseFuncTSPath="" />
+    // Only an empty value causes a runtime error; a non-empty value like
+    // parseFuncTSPath="lib.parseFunc_RTE" is still valid.
+    private const PATTERN_TAG = '/parseFuncTSPath\s*=\s*(["\'])\s*\1/';
+
+    // Inline syntax: {bodytext -> f:format.html(parseFuncTSPath: '')}
+    // Same empty-value constraint applies.
+    private const PATTERN_INLINE = '/parseFuncTSPath\s*:\s*(["\'])\s*\1/';
 
     public function getName(): string
     {
@@ -20,7 +25,10 @@ final class ParseFuncTSPathRule implements RuleInterface, FixableFileRuleInterfa
 
     public function check(string $line, int $lineNumber): array
     {
-        if (preg_match(self::PATTERN, $line) !== 1) {
+        if (
+            preg_match(self::PATTERN_TAG, $line) !== 1
+            && preg_match(self::PATTERN_INLINE, $line) !== 1
+        ) {
             return [];
         }
 
@@ -34,14 +42,28 @@ final class ParseFuncTSPathRule implements RuleInterface, FixableFileRuleInterfa
             return new FixResult(FixStatus::None, '');
         }
 
-        if (preg_match(self::PATTERN, $content) !== 1) {
+        $hasTag = preg_match(self::PATTERN_TAG, $content) === 1;
+        $hasInline = preg_match(self::PATTERN_INLINE, $content) === 1;
+
+        if (!$hasTag && !$hasInline) {
             return new FixResult(FixStatus::None, '');
         }
 
-        // Remove the empty parseFuncTSPath attribute including any leading whitespace.
-        // The inline syntax recommendation remains in the violation message since the
-        // variable name cannot be determined statically.
-        $newContent = preg_replace('/\s*parseFuncTSPath\s*=\s*(["\'])\s*\1/', '', $content);
+        $newContent = $content;
+
+        if ($hasTag) {
+            // Remove the empty attribute including any leading whitespace.
+            $newContent = preg_replace('/\s*parseFuncTSPath\s*=\s*(["\'])\s*\1/', '', $newContent);
+        }
+
+        if ($hasInline) {
+            // Two passes to avoid PCRE backreference numbering issues with alternation.
+            // Pass 1: last/middle arg — eat the leading comma.
+            $newContent = preg_replace('/,\s*parseFuncTSPath\s*:\s*(["\'])\s*\1/', '', $newContent);
+            // Pass 2: first/only arg — eat trailing comma+space if present.
+            $newContent = preg_replace('/parseFuncTSPath\s*:\s*(["\'])\s*\1\s*,?\s*/', '', $newContent);
+        }
+
         if ($newContent === null || $newContent === $content) {
             return new FixResult(FixStatus::None, '');
         }
@@ -49,7 +71,7 @@ final class ParseFuncTSPathRule implements RuleInterface, FixableFileRuleInterfa
         file_put_contents($filePath, $newContent);
         return new FixResult(
             FixStatus::Applied,
-            sprintf('Removed empty parseFuncTSPath="" attribute from %s', basename($filePath)),
+            sprintf('Removed empty parseFuncTSPath attribute from %s', basename($filePath)),
         );
     }
 }
