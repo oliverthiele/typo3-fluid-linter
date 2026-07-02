@@ -38,15 +38,19 @@ final class TypographicQuotesRule implements RuleInterface
 
     public function check(string $line, int $lineNumber): array
     {
-        if (preg_match(self::PATTERN, $line, $matches) !== 1) {
+        if (!preg_match_all(self::PATTERN, $line, $allMatches, PREG_SET_ORDER)) {
             return [];
         }
 
-        $character = $matches[1];
-        return [['line' => $lineNumber, 'message' => sprintf(
-            'Invalid quote character "%s" (U+%04X) used as value delimiter — only straight ASCII quotes (" or \') are valid in HTML attributes and Fluid ViewHelper arguments.',
-            $character,
-            mb_ord($character),
-        )]];
+        $violations = [];
+        foreach ($allMatches as $matches) {
+            $character = $matches[1];
+            $violations[] = ['line' => $lineNumber, 'message' => sprintf(
+                'Invalid quote character "%s" (U+%04X) used as value delimiter — only straight ASCII quotes (" or \') are valid in HTML attributes and Fluid ViewHelper arguments.',
+                $character,
+                mb_ord($character),
+            )];
+        }
+        return $violations;
     }
 }

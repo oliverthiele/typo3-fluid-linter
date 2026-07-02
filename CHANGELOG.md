@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] — 2026-07-02
+
+### Fixed
+
+- `bin/fluid-lint --fix`: fix-shadowing — when a file had violations from two different rules, the second rule's `fix()` operated on already-modified file content; now only one fix is applied per file per run (break after first `Applied`); re-run fluid-lint to apply further fixes
+- `bin/fluid-lint --fix`: exit-code granularity — a file with one fixed and one unfixed error previously exited `0` because the whole file was marked as fixed; `$fixedRules` now tracks `(filePath, ruleName)` pairs so unfixed errors in the same file still contribute to exit code `1`
+- `bin/fluid-lint --fix`: stdout pollution — `FIXED`/`SKIP` progress lines were written to stdout, corrupting `--format=json` output and confusing `--format=github` annotations; all fix progress output now goes to stderr
+- `bin/fluid-lint --fix`: replaced `O(N²)` `in_array($fixedFiles)` check with `O(1)` `isset()` on the `$fixedRules` map
+- `TypographicQuotesRule`: only the first invalid quote delimiter per line was reported (`preg_match`); now all of them are (`preg_match_all`) — e.g. a tag with both `src` and `alt` using bad delimiters previously hid the second violation
+
+### Changed
+
+- README/TODO: documented the complementary relationship with TYPO3 core's `typo3 fluid:analyze` command (AST-based syntax/deprecation check, requires a bootable TYPO3 instance and `*.fluid.*` files) — this tool remains necessary for standalone extension repos and lightweight CI without a full TYPO3 install
+
 ## [0.6.0] — 2026-06-26
 
 ### Added
@@ -90,7 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `bin/fluid-lint` CLI with `--format=github` and `--typo3-version=<major>` flags
 - Exit code `1` only on `error` severity; `warning` and `info` exit with `0`
 
-[Unreleased]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.6.1...HEAD
+[0.6.1]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.3.0...0.4.0
