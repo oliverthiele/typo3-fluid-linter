@@ -256,4 +256,18 @@ final class TypographicQuotesRuleTest extends TestCase
 
         self::assertSame(42, $violations[0]['line']);
     }
+
+    #[Test]
+    public function multipleViolationsOnSameLineAreAllReported(): void
+    {
+        // LLM may produce multiple bad delimiters in one line, e.g. src and alt both wrong
+        $line = "<f:image src=\u{00AB}pic.jpg\u{00BB} alt=\u{201C}Bild\u{201D} />";
+        $violations = $this->rule->check($line, 7);
+
+        self::assertCount(2, $violations);
+        self::assertSame(7, $violations[0]['line']);
+        self::assertSame(7, $violations[1]['line']);
+        self::assertStringContainsString("\u{00AB}", $violations[0]['message']);
+        self::assertStringContainsString("\u{201C}", $violations[1]['message']);
+    }
 }
