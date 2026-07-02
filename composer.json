@@ -1,5 +1,5 @@
 {
-    "name": "oliver-thiele/typo3-fluid-linter",
+    "name": "oliverthiele/typo3-fluid-linter",
     "description": "A linter for TYPO3 Fluid templates — catches typographic quotes, deprecated syntax, and Fluid 5 breaking changes",
     "type": "library",
     "license": "GPL-2.0-or-later",

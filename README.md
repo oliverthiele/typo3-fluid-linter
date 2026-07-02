@@ -2,9 +2,9 @@
 
 A CLI linter for TYPO3 Fluid templates that catches encoding errors, deprecated syntax, and Fluid 5 breaking changes before they reach production.
 
-[![Packagist Version](https://img.shields.io/packagist/v/oliver-thiele/typo3-fluid-linter.svg)](https://packagist.org/packages/oliver-thiele/typo3-fluid-linter)
-[![PHP](https://img.shields.io/packagist/dependency-v/oliver-thiele/typo3-fluid-linter/php.svg)](https://php.net/)
-[![License](https://img.shields.io/packagist/l/oliver-thiele/typo3-fluid-linter.svg)](LICENSE)
+[![Packagist Version](https://img.shields.io/packagist/v/oliverthiele/typo3-fluid-linter.svg)](https://packagist.org/packages/oliverthiele/typo3-fluid-linter)
+[![PHP](https://img.shields.io/packagist/dependency-v/oliverthiele/typo3-fluid-linter/php.svg)](https://php.net/)
+[![License](https://img.shields.io/packagist/l/oliverthiele/typo3-fluid-linter.svg)](LICENSE)
 [![Changelog](https://img.shields.io/badge/Changelog-CHANGELOG.md-blue.svg)](CHANGELOG.md)
 
 ---
@@ -54,7 +54,7 @@ The alternative — asking a second LLM to review every generated template for e
 ## Installation
 
 ```bash
-composer require --dev oliver-thiele/typo3-fluid-linter
+composer require --dev oliverthiele/typo3-fluid-linter
 ```
 
 ---
