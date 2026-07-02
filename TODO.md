@@ -30,7 +30,7 @@
 
 Compared against `fluid-components-linter`, `fluid-lint`, and `Fluid.Lint` (see `temp/`):
 
-- **AST-based syntax check** (`Fluid.Lint` / `fluid-lint` approach): actual Fluid template parsing via `typo3fluid/fluid` to catch unclosed tags, malformed expressions, invalid nesting. Would require adding `typo3fluid/fluid` as an optional dependency or a separate `fluid-lint-ast` package. Breaking change for "zero dependency" promise.
+- **AST-based syntax check** (`Fluid.Lint` / `fluid-lint` approach): actual Fluid template parsing via `typo3fluid/fluid` to catch unclosed tags, malformed expressions, invalid nesting. Would require adding `typo3fluid/fluid` as an optional dependency or a separate `fluid-lint-ast` package. Breaking change for "zero dependency" promise. **Superseded**: TYPO3 core ships this natively as `typo3 fluid:analyze` (`TYPO3\CMS\Fluid\Command\AnalyzeCommand`, since TYPO3 v13), which parses `*.fluid.*` files with the real `typo3fluid/fluid` `TemplateParser` and reports both parse errors and dynamically-triggered `E_USER_DEPRECATED` warnings. Requires a fully bootable TYPO3 instance, so it's not a substitute for this tool in standalone/zero-dependency contexts — but where a full install exists, run both: `fluid:analyze` for real AST/syntax errors, this linter for encoding artifacts, namespace/XML issues, and version-simulated deprecations (`--typo3-version=<major>` works without that version being installed). No further work planned here.
 - **Component slot validation** (`fluid-components-linter` approach): verify that `<fc:component>` slots are correctly used. Only relevant for projects using `sitegeist/fluid-components` — candidate for an optional plugin rule.
 
 ## Ideas for 1.0
