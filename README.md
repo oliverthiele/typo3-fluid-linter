@@ -25,7 +25,7 @@ The alternative — asking a second LLM to review every generated template for e
 
 ## Features
 
-- **Invalid attribute quote detection** — flags non-ASCII quote characters used as attribute value delimiters: typographic quotes (U+201C `"`, U+201D `"`, U+2018 `'`, U+2019 `'`, U+201A `‚`, U+201E `„`), backtick (U+0060 `` ` ``), prime/inch marks (U+2032 `′`, U+2033 `″`), angle quotes (U+00AB `«`, U+00BB `»`, U+2039 `‹`, U+203A `›`); text content between tags (e.g. `1/2″` inside `<f:case>`) is not flagged
+- **Invalid attribute quote detection** — flags non-ASCII quote characters used as attribute value delimiters: typographic quotes (U+201C `"`, U+201D `"`, U+2018 `'`, U+2019 `'`, U+201A `‚`, U+201E `„`), backtick (U+0060 `` ` ``), prime/inch marks (U+2032 `′`, U+2033 `″`), angle quotes (U+00AB `«`, U+00BB `»`, U+2039 `‹`, U+203A `›`); text content between tags (e.g. `1/2″` inside `<f:case>`) is not flagged, and neither are the bodies of `<script>` and `<style>`, where backticks and colons are valid syntax — their opening tags are still checked
 - **Missing namespace attribute** — detects `<html>` tags with a Fluid xmlns declaration that are missing `data-namespace-typo3-fluid="true"`, which causes duplicate `<html>` elements in the rendered output
 - **Invalid namespace URI** — `https://typo3.org/ns/` throws a runtime exception; the correct prefix is `http://typo3.org/ns/`
 - **Fluid 5 compatibility** — detects variable names starting with an underscore, which are forbidden in Fluid 5 (TYPO3 v14)

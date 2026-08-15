@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OliverThiele\FluidLinter\Rule;
 
-final class TypographicQuotesRule implements RuleInterface
+final class TypographicQuotesRule implements FileRuleInterface
 {
     // Matches any non-ASCII quote character immediately after = (HTML/Fluid tag attribute)
     // or : (Fluid inline ViewHelper argument, e.g. {var -> f:format.html(class: «container»)}).
@@ -14,6 +14,12 @@ final class TypographicQuotesRule implements RuleInterface
     // Known limitation: prose text containing `word: «quote»` directly in a template would be
     // flagged as a false positive. In practice this is rare — Fluid templates keep translated
     // text in .xlf files, not inline.
+    //
+    // The bodies of <script> and <style> elements are excluded, because both languages use the
+    // matched characters legitimately: a JavaScript template literal is delimited by backticks
+    // (`url("${poster}")`), and an object literal or CSS declaration puts a value right after a
+    // colon. Checking them turned every template with inline JS into a permanent false positive.
+    // The opening tags themselves stay in scope — <script src=“x“> is still a real error.
     //
     // Characters covered:
     //   U+0060  `   GRAVE ACCENT (backtick)
@@ -31,11 +37,39 @@ final class TypographicQuotesRule implements RuleInterface
     //   U+203A  ›   SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
     private const PATTERN = '/[=:]\s*([\x{0060}\x{00AB}\x{00BB}\x{2018}\x{2019}\x{201A}\x{201C}\x{201D}\x{201E}\x{2032}\x{2033}\x{2039}\x{203A}])/u';
 
+    // Body of a <script> or <style> element, captured separately from its delimiting tags.
+    private const EMBEDDED_CODE_PATTERN = '#(<(script|style)\b[^>]*>)(.*?)(</\2\s*>)#is';
+
     public function getName(): string
     {
         return 'typographic-quotes';
     }
 
+    public function checkFile(string $content, string $filePath): array
+    {
+        $violations = [];
+
+        foreach (explode("\n", self::maskEmbeddedCode($content)) as $lineIndex => $line) {
+            foreach ($this->check($line, $lineIndex + 1) as $violation) {
+                $violations[] = [
+                    'line' => $violation['line'],
+                    'message' => $violation['message'],
+                    'severity' => 'error',
+                ];
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * Checks a single line, without any knowledge of the surrounding <script>/<style> context.
+     *
+     * Kept public as the line-level primitive behind checkFile() — the rule needs the whole file
+     * to recognise embedded code, but every pattern decision is still made one line at a time.
+     *
+     * @return list<array{line: int, message: string}>
+     */
     public function check(string $line, int $lineNumber): array
     {
         if (!preg_match_all(self::PATTERN, $line, $allMatches, PREG_SET_ORDER)) {
@@ -52,5 +86,23 @@ final class TypographicQuotesRule implements RuleInterface
             )];
         }
         return $violations;
+    }
+
+    /**
+     * Blanks out the body of every <script> and <style> element.
+     *
+     * Only newlines survive, so all following line numbers stay correct. Replacement happens
+     * byte-wise on purpose: a multibyte character becomes several spaces, which is irrelevant
+     * because nothing but the line breaks is read from the masked content afterwards.
+     */
+    private static function maskEmbeddedCode(string $content): string
+    {
+        return (string)preg_replace_callback(
+            self::EMBEDDED_CODE_PATTERN,
+            static fn (array $matches): string => $matches[1]
+                . (string)preg_replace('/[^\n]/', ' ', $matches[3])
+                . $matches[4],
+            $content,
+        );
     }
 }

@@ -58,9 +58,9 @@ final class CdataSectionRuleTest extends TestCase
     #[Test]
     public function multipleCdataBlocksInMultipleComments(): void
     {
-        $content = "<f:comment><![CDATA[first]]></f:comment>\n" .
-            "<p>some text</p>\n" .
-            '<f:comment><![CDATA[second]]></f:comment>';
+        $content = "<f:comment><![CDATA[first]]></f:comment>\n"
+            . "<p>some text</p>\n"
+            . '<f:comment><![CDATA[second]]></f:comment>';
 
         $violations = $this->rule->checkFile($content, 'Test.html');
 
@@ -71,8 +71,8 @@ final class CdataSectionRuleTest extends TestCase
     public function cdataOutsideCommentNotFlaggedEvenWithCommentPresent(): void
     {
         // The CDATA in <title> must not be flagged even when an <f:comment> exists in the file
-        $content = "<f:comment>regular comment</f:comment>\n" .
-            '<title><![CDATA[News]]></title>';
+        $content = "<f:comment>regular comment</f:comment>\n"
+            . '<title><![CDATA[News]]></title>';
 
         self::assertSame([], $this->rule->checkFile($content, 'Test.html'));
     }

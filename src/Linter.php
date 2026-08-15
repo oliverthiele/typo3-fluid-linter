@@ -10,9 +10,6 @@ use OliverThiele\FluidLinter\Result\Violation;
 use OliverThiele\FluidLinter\Rule\FileRuleInterface;
 use OliverThiele\FluidLinter\Rule\RuleInterface;
 use OliverThiele\FluidLinter\Rule\VersionedRuleInterface;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
 
 final class Linter
 {
@@ -84,12 +81,12 @@ final class Linter
     public function lintDirectory(string $directory, string $extension = 'html'): array
     {
         $results = [];
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS)
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \RecursiveDirectoryIterator::SKIP_DOTS)
         );
 
         foreach ($iterator as $file) {
-            if ($file instanceof SplFileInfo && $file->getExtension() === $extension) {
+            if ($file instanceof \SplFileInfo && $file->getExtension() === $extension) {
                 $results[$file->getPathname()] = $this->lintFile($file->getPathname());
             }
         }

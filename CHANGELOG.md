@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] — 2026-08-15
+
+### Fixed
+
+- `TypographicQuotesRule`: the bodies of `<script>` and `<style>` elements are no longer checked. Both languages use the matched characters legitimately — a JavaScript template literal is delimited by backticks (`` `url("${poster}")` ``), and an object literal or CSS declaration puts a value directly after a colon — so every template with inline JS produced a permanent false positive. The opening tags stay in scope: `<script src=“app.js“>` is still reported. Masking preserves line numbers, and an unclosed `<script>` does not disable the rule for the rest of the file.
+
+### Changed
+
+- `TypographicQuotesRule` now implements `FileRuleInterface` instead of `RuleInterface` — recognising embedded code needs the whole file, not one line at a time. `check(string $line, int $lineNumber)` stays available as the public line-level primitive; the detection patterns are unchanged.
+
 ## [0.7.0] — 2026-07-02
 
 ### Changed
@@ -108,7 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `bin/fluid-lint` CLI with `--format=github` and `--typo3-version=<major>` flags
 - Exit code `1` only on `error` severity; `warning` and `info` exit with `0`
 
-[Unreleased]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.7.1...HEAD
+[0.7.1]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.6.1...0.7.0
 [0.6.1]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/oliverthiele/typo3-fluid-linter/compare/0.5.0...0.6.0

@@ -61,7 +61,7 @@ final class XmlDeclarationRuleTest extends TestCase
     public function noViolationWhenXmlAppearsInContent(): void
     {
         // <?xml in the middle of content (not at file start) must not trigger the rule
-        $content = "<p>Use <?xml ...?> for RSS feeds</p>";
+        $content = '<p>Use <?xml ...?> for RSS feeds</p>';
 
         self::assertSame([], $this->rule->checkFile($content, 'Test.html'));
     }

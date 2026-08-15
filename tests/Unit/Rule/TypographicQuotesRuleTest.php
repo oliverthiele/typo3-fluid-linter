@@ -238,7 +238,7 @@ final class TypographicQuotesRuleTest extends TestCase
             ],
             'backtick after colon in inline argument' => [
                 'backtick as inline ViewHelper argument value delimiter',
-                "{var -> f:format.html(parseFuncTSPath: `lib.parseFunc_RTE`)}",
+                '{var -> f:format.html(parseFuncTSPath: `lib.parseFunc_RTE`)}',
                 '`',
             ],
             'german low-9 quote after colon in inline argument' => [
@@ -255,6 +255,82 @@ final class TypographicQuotesRuleTest extends TestCase
         $violations = $this->rule->check("<tag class=\u{201C}test\">", 42);
 
         self::assertSame(42, $violations[0]['line']);
+    }
+
+    // --- Embedded code: <script> and <style> bodies are out of scope ---
+
+    #[Test]
+    #[DataProvider('filesWithNoViolation')]
+    public function checkFileReturnsNoViolationFor(string $description, string $content): void
+    {
+        self::assertSame([], $this->rule->checkFile($content, 'Template.html'), $description);
+    }
+
+    public static function filesWithNoViolation(): array
+    {
+        return [
+            'javascript template literal' => [
+                'backticks delimiting a JS template literal — the characters are correct JavaScript',
+                "<div></div>\n<script>\n    el.style.backgroundImage = `url(\"\${poster}\")`;\n</script>\n",
+            ],
+            'javascript object literal with typographic quotes in a string' => [
+                'a colon followed by a typographic quote inside JS prose — not an attribute delimiter',
+                "<script>\n    const label = {text: \u{201C}Hallo\u{201D}};\n</script>\n",
+            ],
+            'css declaration with a quoted content value' => [
+                'CSS content declaration — colon followed by a typographic quote is valid CSS',
+                "<style>\n    .quote::before { content: \u{201E}; }\n</style>\n",
+            ],
+            'script tag with attributes on multiple lines' => [
+                'multi-line opening tag with correct delimiters, backticks only in the body',
+                "<script\n        type=\"module\">\n    const url = `/api/\${id}`;\n</script>\n",
+            ],
+        ];
+    }
+
+    #[Test]
+    public function violationsInsideScriptBodyAreSkippedButSurroundingMarkupIsStillChecked(): void
+    {
+        $content = "<img alt=\u{201C}before\u{201D}>\n"
+            . "<script>\n"
+            . "    const url = `/api/x`;\n"
+            . "</script>\n"
+            . "<img alt=\u{201C}after\u{201D}>\n";
+
+        $violations = $this->rule->checkFile($content, 'Template.html');
+
+        self::assertCount(2, $violations);
+        self::assertSame(1, $violations[0]['line']);
+        self::assertSame(5, $violations[1]['line'], 'masking must preserve the line numbering');
+        self::assertSame('error', $violations[0]['severity']);
+    }
+
+    #[Test]
+    public function scriptOpeningTagItselfIsStillChecked(): void
+    {
+        // Only the body is masked — a bad delimiter on the <script> tag is a real error.
+        $violations = $this->rule->checkFile(
+            "<script src=\u{201C}app.js\u{201D}></script>\n",
+            'Template.html',
+        );
+
+        self::assertCount(1, $violations);
+        self::assertSame(1, $violations[0]['line']);
+    }
+
+    #[Test]
+    public function unclosedScriptTagDoesNotMaskTheRestOfTheFile(): void
+    {
+        // A missing </script> must not silently disable the rule for everything below it.
+        $content = "<script>\n"
+            . "    const url = `/api/x`;\n"
+            . "<img alt=\u{201C}still checked\u{201D}>\n";
+
+        $violations = $this->rule->checkFile($content, 'Template.html');
+
+        self::assertCount(2, $violations, 'backtick and typographic quote are both reported');
+        self::assertSame(2, $violations[0]['line']);
+        self::assertSame(3, $violations[1]['line']);
     }
 
     #[Test]
