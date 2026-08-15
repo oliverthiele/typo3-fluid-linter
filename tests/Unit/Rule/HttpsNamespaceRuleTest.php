@@ -88,9 +88,9 @@ final class HttpsNamespaceRuleTest extends TestCase
     #[Test]
     public function fixReplacesAllOccurrencesAndReportsCount(): void
     {
-        $content = '<html' . "\n" .
-            '    xmlns:f="https://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"' . "\n" .
-            '    xmlns:be="https://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers">';
+        $content = '<html' . "\n"
+            . '    xmlns:f="https://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"' . "\n"
+            . '    xmlns:be="https://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers">';
         $filePath = $this->writeTempFile($content);
 
         $result = $this->rule->fix($filePath, false);
@@ -105,8 +105,8 @@ final class HttpsNamespaceRuleTest extends TestCase
     #[Test]
     public function fixDoesNotAffectUnrelatedHttpsUrls(): void
     {
-        $content = '<html xmlns:f="https://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n" .
-            '<a href="https://example.com">link</a>';
+        $content = '<html xmlns:f="https://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n"
+            . '<a href="https://example.com">link</a>';
         $filePath = $this->writeTempFile($content);
 
         $this->rule->fix($filePath, false);

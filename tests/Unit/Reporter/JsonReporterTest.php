@@ -23,7 +23,7 @@ final class JsonReporterTest extends TestCase
     public function outputIsValidJson(): void
     {
         $reporter = new JsonReporter();
-        $output = $this->captureOutput(fn () => $reporter->report([]));
+        $output = $this->captureOutput(fn() => $reporter->report([]));
 
         self::assertJson($output);
     }
@@ -32,7 +32,7 @@ final class JsonReporterTest extends TestCase
     public function emptyResultsProduceEmptyViolationsArray(): void
     {
         $reporter = new JsonReporter();
-        $output = $this->captureOutput(fn () => $reporter->report([]));
+        $output = $this->captureOutput(fn() => $reporter->report([]));
         $data = json_decode($output, true);
 
         self::assertSame([], $data['violations']);
@@ -56,7 +56,7 @@ final class JsonReporterTest extends TestCase
         ));
 
         $reporter = new JsonReporter();
-        $output = $this->captureOutput(fn () => $reporter->report(['path/to/Template.html' => $result]));
+        $output = $this->captureOutput(fn() => $reporter->report(['path/to/Template.html' => $result]));
         $data = json_decode($output, true);
 
         self::assertCount(1, $data['violations']);
@@ -80,7 +80,7 @@ final class JsonReporterTest extends TestCase
 
         $reporter = new JsonReporter();
         $output = $this->captureOutput(
-            fn () => $reporter->report(['a.html' => $result, 'b.html' => $emptyResult])
+            fn() => $reporter->report(['a.html' => $result, 'b.html' => $emptyResult])
         );
         $data = json_decode($output, true);
 
@@ -95,7 +95,7 @@ final class JsonReporterTest extends TestCase
     public function outputEndsWithNewline(): void
     {
         $reporter = new JsonReporter();
-        $output = $this->captureOutput(fn () => $reporter->report([]));
+        $output = $this->captureOutput(fn() => $reporter->report([]));
 
         self::assertStringEndsWith(PHP_EOL, $output);
     }
@@ -107,7 +107,7 @@ final class JsonReporterTest extends TestCase
         $result->addViolation(new Violation('path/to/Template.html', 1, 'rule', 'msg', 'error'));
 
         $reporter = new JsonReporter();
-        $output = $this->captureOutput(fn () => $reporter->report(['path/to/Template.html' => $result]));
+        $output = $this->captureOutput(fn() => $reporter->report(['path/to/Template.html' => $result]));
 
         self::assertStringContainsString('path/to/Template.html', $output, 'Forward slashes must not be escaped');
     }

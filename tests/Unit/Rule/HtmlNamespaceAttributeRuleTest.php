@@ -49,8 +49,8 @@ final class HtmlNamespaceAttributeRuleTest extends TestCase
     public function noViolationForLayoutTemplate(): void
     {
         // Layout templates are never rendered directly — <html> is stripped by Fluid
-        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n" .
-            '<f:layout name="Default" />';
+        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n"
+            . '<f:layout name="Default" />';
 
         self::assertSame([], $this->rule->checkFile($content, 'Default.html'));
     }
@@ -66,8 +66,8 @@ final class HtmlNamespaceAttributeRuleTest extends TestCase
     #[Test]
     public function violationWhenFluidNamespacePresentButDataAttributeMissing(): void
     {
-        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n" .
-            '<body><f:render partial="Foo" /></body></html>';
+        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n"
+            . '<body><f:render partial="Foo" /></body></html>';
 
         $violations = $this->rule->checkFile($content, 'Test.html');
 
@@ -89,8 +89,8 @@ final class HtmlNamespaceAttributeRuleTest extends TestCase
     #[Test]
     public function fixAddsDataAttributeToHtmlTag(): void
     {
-        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n" .
-            '<body><f:render partial="Foo" /></body></html>';
+        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n"
+            . '<body><f:render partial="Foo" /></body></html>';
         $filePath = $this->writeTempFile($content);
 
         $result = $this->rule->fix($filePath, false);
@@ -104,8 +104,8 @@ final class HtmlNamespaceAttributeRuleTest extends TestCase
     #[Test]
     public function fixDoesNothingIfDataAttributeAlreadyPresent(): void
     {
-        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">' . "\n" .
-            '<body><f:render partial="Foo" /></body></html>';
+        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">' . "\n"
+            . '<body><f:render partial="Foo" /></body></html>';
         $filePath = $this->writeTempFile($content);
 
         $result = $this->rule->fix($filePath, false);
@@ -117,8 +117,8 @@ final class HtmlNamespaceAttributeRuleTest extends TestCase
     #[Test]
     public function fixDoesNothingForLayoutTemplates(): void
     {
-        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n" .
-            '<f:layout name="Default" />';
+        $content = '<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers">' . "\n"
+            . '<f:layout name="Default" />';
         $filePath = $this->writeTempFile($content);
 
         $result = $this->rule->fix($filePath, false);
@@ -141,10 +141,10 @@ final class HtmlNamespaceAttributeRuleTest extends TestCase
     #[Test]
     public function fixHandlesMultiLineHtmlOpeningTag(): void
     {
-        $content = '<html' . "\n" .
-            '    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"' . "\n" .
-            '    lang="en">' . "\n" .
-            '<body></body></html>';
+        $content = '<html' . "\n"
+            . '    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"' . "\n"
+            . '    lang="en">' . "\n"
+            . '<body></body></html>';
         $filePath = $this->writeTempFile($content);
 
         $result = $this->rule->fix($filePath, false);

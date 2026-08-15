@@ -238,7 +238,7 @@ final class TypographicQuotesRuleTest extends TestCase
             ],
             'backtick after colon in inline argument' => [
                 'backtick as inline ViewHelper argument value delimiter',
-                "{var -> f:format.html(parseFuncTSPath: `lib.parseFunc_RTE`)}",
+                '{var -> f:format.html(parseFuncTSPath: `lib.parseFunc_RTE`)}',
                 '`',
             ],
             'german low-9 quote after colon in inline argument' => [
