@@ -30,7 +30,7 @@ The alternative — asking a second LLM to review every generated template for e
 - **Invalid namespace URI** — `https://typo3.org/ns/` throws a runtime exception; the correct prefix is `http://typo3.org/ns/`
 - **Fluid 5 compatibility** — detects variable names starting with an underscore, which are forbidden in Fluid 5 (TYPO3 v14)
 - **Deprecated syntax** — flags empty `parseFuncTSPath=""`, which causes a runtime error; use `{field -> f:format.html()}` instead
-- **CDATA section detection** — flags `<![CDATA[...]]>` inside `<f:comment>` blocks, the old pattern for safely commenting out Fluid code; deprecated in Fluid 4 and removed in Fluid 5; legitimate CDATA in XML/RSS templates and `{{{expression}}}` output syntax are not flagged
+- **CDATA section detection** — flags `<![CDATA[...]]>` inside `<f:comment>` blocks, the old pattern for safely commenting out Fluid code; deprecated in Fluid 4 and removed in Fluid 5; legitimate CDATA in XML/RSS templates and `{{{expression}}}` output syntax are not flagged; fixable with `--fix`
 - **XML declaration warning** — flags the `<?xml ...?>` processing instruction, which is unnecessary in Fluid templates and may trigger Quirks Mode
 - **Debug ViewHelper detection** — flags `<f:debug>` usage to prevent debug output from reaching production; configurable as `warning` (development) or `error` (live gate)
 - **Deprecated ViewHelper detection** — flags ViewHelpers and arguments that were deprecated or removed in a specific TYPO3 version: all `<f:widget.*>` (removed v11), `getVars` on `<be:moduleLayout.button.shortcutButton>` (deprecated v11), `<f:be.container>` (deprecated v11.3), `<f:be.buttons.shortcut>` and `<f:base>` (removed v12), `<f:be.buttons.csh>` and `<f:be.labels.csh>` (removed v13), `<f:debug.render>` and `useNonce` on `<f:asset.*>` (deprecated v14.2); requires `--typo3-version=<major>`
@@ -152,6 +152,7 @@ Currently fixable rules:
 | `parsefunc-tspath` | Remove the empty `parseFuncTSPath=""` attribute from the tag | No |
 | `html-namespace-attribute` | Insert `data-namespace-typo3-fluid="true"` into the `<html>` opening tag | No |
 | `https-namespace` | Replace `https://typo3.org/ns/` with `http://typo3.org/ns/` (all occurrences) | No |
+| `cdata-section` | Remove the `<![CDATA[` / `]]>` delimiters inside `<f:comment>` (all occurrences); surrounding HTML comment markers and the commented text are kept | No |
 | `fluid-file-extension` (info) | Rename `Template.html` → `Template.fluid.html` | No |
 | `fluid-file-extension` (warning) | Delete `Template.html` (`.fluid.html` counterpart kept) | Yes |
 
@@ -181,7 +182,7 @@ Usage: fluid-lint [--format=github|json] [--fix [--allow-risky]] [--config=<file
 Options:
   --format=github          Emit GitHub Actions annotation format instead of console output
   --format=json            Emit structured JSON (violations array + summary object)
-  --fix                    Apply safe automatic fixes (rename .html → .fluid.html)
+  --fix                    Apply safe automatic fixes (see "Automatic fixes" above)
   --allow-risky            Also apply destructive fixes (delete files) — requires --fix
   --config=<file>          Load rule configuration from a PHP file returning a LintConfig instance
   --typo3-version=<major>  Activate version-specific rules (e.g. --typo3-version=14)

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] — 2026-08-25
+
+### Added
+
+- `CdataSectionRule` is now fixable: `--fix` removes the `<![CDATA[` / `]]>` delimiters inside every `<f:comment>` block and keeps the commented text. Surrounding HTML comment markers (`<f:comment><!-- <![CDATA[ … ]]> --></f:comment>`) are kept on purpose — they grey the text out in the IDE. CDATA outside `<f:comment>` — XML/RSS templates, `<script>` bodies — is never touched. A line that held nothing but delimiters and whitespace is removed instead of being left behind as a blank line; on every other touched line the whitespace left at the end of the line is trimmed. The fix is not risky and needs no `--allow-risky`.
+
+### Changed
+
+- `CdataSectionRule` determines the `<f:comment>` ranges by tag balance instead of pairing each opening tag with the first closing tag that follows it. Nested comments now yield one outer range rather than overlapping ones, and a self-closing `<f:comment />` no longer shifts the pairing — which previously could pull CDATA outside any comment into a range. Reported violations are unchanged for balanced templates.
+
 ## [0.7.1] — 2026-08-15
 
 ### Fixed

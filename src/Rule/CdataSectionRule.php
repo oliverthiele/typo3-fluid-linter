@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace OliverThiele\FluidLinter\Rule;
 
-final class CdataSectionRule implements FileRuleInterface
+use OliverThiele\FluidLinter\Result\FixResult;
+use OliverThiele\FluidLinter\Result\FixStatus;
+
+final class CdataSectionRule implements FileRuleInterface, FixableFileRuleInterface
 {
     // CDATA sections inside <f:comment> were the old way to safely comment out Fluid syntax.
     // Deprecated in Fluid 4 (typo3fluid/fluid < 5.0), removed in Fluid 5 / TYPO3 v14.
     // Legitimate CDATA in XML/RSS templates (e.g. <title><![CDATA[...]]></title>) is not flagged.
     // Fluid 5 provides {{{expression}}} as the explicit CDATA-output syntax.
+
+    private const CDATA_OPEN = '<![CDATA[';
+    private const CDATA_CLOSE = ']]>';
 
     public function getName(): string
     {
@@ -20,27 +26,12 @@ final class CdataSectionRule implements FileRuleInterface
     {
         $violations = [];
 
-        // Collect all <f:comment>...</f:comment> byte ranges
-        preg_match_all('/<f:comment\b[^>]*>/i', $content, $openMatches, PREG_OFFSET_CAPTURE);
-        preg_match_all('/<\/f:comment>/i', $content, $closeMatches, PREG_OFFSET_CAPTURE);
-
-        $commentRanges = [];
-        foreach ($openMatches[0] as $openMatch) {
-            $openOffset = $openMatch[1];
-            foreach ($closeMatches[0] as $closeMatch) {
-                $closeOffset = $closeMatch[1];
-                if ($closeOffset > $openOffset) {
-                    $commentRanges[] = [$openOffset, $closeOffset + strlen($closeMatch[0])];
-                    break;
-                }
-            }
-        }
-
+        $commentRanges = $this->collectCommentRanges($content);
         if ($commentRanges === []) {
             return [];
         }
 
-        preg_match_all('/<!\[CDATA\[/', $content, $cdataMatches, PREG_OFFSET_CAPTURE);
+        preg_match_all('/' . preg_quote(self::CDATA_OPEN, '/') . '/', $content, $cdataMatches, PREG_OFFSET_CAPTURE);
 
         foreach ($cdataMatches[0] as $cdataMatch) {
             $cdataOffset = $cdataMatch[1];
@@ -59,5 +50,121 @@ final class CdataSectionRule implements FileRuleInterface
         }
 
         return $violations;
+    }
+
+    /**
+     * Removes the CDATA delimiters inside every <f:comment> block while keeping the commented
+     * text — including any surrounding HTML comment markers, which grey the text out in the IDE.
+     * CDATA outside <f:comment> (XML/RSS templates, script bodies) is never touched.
+     */
+    public function fix(string $filePath, bool $allowRisky): FixResult
+    {
+        $content = file_get_contents($filePath);
+        if ($content === false) {
+            return new FixResult(FixStatus::None, '');
+        }
+
+        $commentRanges = $this->collectCommentRanges($content);
+        if ($commentRanges === []) {
+            return new FixResult(FixStatus::None, '');
+        }
+
+        $removed = 0;
+        // Rewrite the ranges back to front so the offsets of the untouched ranges stay valid
+        foreach (array_reverse($commentRanges) as [$rangeStart, $rangeEnd]) {
+            $segment = substr($content, $rangeStart, $rangeEnd - $rangeStart);
+            $removed += substr_count($segment, self::CDATA_OPEN);
+            $cleanedSegment = $this->removeCdataDelimiters($segment);
+            if ($cleanedSegment !== $segment) {
+                $content = substr_replace($content, $cleanedSegment, $rangeStart, $rangeEnd - $rangeStart);
+            }
+        }
+
+        if ($removed === 0) {
+            return new FixResult(FixStatus::None, '');
+        }
+
+        file_put_contents($filePath, $content);
+
+        return new FixResult(
+            FixStatus::Applied,
+            sprintf(
+                'Removed %d CDATA section(s) from <f:comment> in %s',
+                $removed,
+                basename($filePath),
+            ),
+        );
+    }
+
+    /**
+     * Collects the byte ranges of all top-level <f:comment>...</f:comment> blocks.
+     *
+     * Nested comments are reported as one outer range: a CDATA section inside an inner comment
+     * lies within the outer one as well, so no occurrence is lost. Self-closing <f:comment />
+     * tags carry no content and are skipped — counting them as an opening tag would pair the
+     * next closing tag with the wrong comment.
+     *
+     * @return list<array{int, int}>
+     */
+    private function collectCommentRanges(string $content): array
+    {
+        preg_match_all('/<f:comment\b[^>]*>|<\/f:comment>/i', $content, $matches, PREG_OFFSET_CAPTURE);
+
+        $ranges = [];
+        $depth = 0;
+        $rangeStart = 0;
+
+        foreach ($matches[0] as [$tag, $offset]) {
+            if (str_ends_with($tag, '/>')) {
+                continue;
+            }
+
+            if ($tag[1] !== '/') {
+                if ($depth === 0) {
+                    $rangeStart = $offset;
+                }
+                $depth++;
+                continue;
+            }
+
+            if ($depth === 0) {
+                continue;
+            }
+
+            $depth--;
+            if ($depth === 0) {
+                $ranges[] = [$rangeStart, $offset + strlen($tag)];
+            }
+        }
+
+        return $ranges;
+    }
+
+    /**
+     * Drops the CDATA delimiters line by line. A line that held nothing but delimiters and
+     * whitespace is removed entirely instead of being left behind as a blank line; on every
+     * other touched line the whitespace the removal left at the end of the line is trimmed.
+     */
+    private function removeCdataDelimiters(string $segment): string
+    {
+        $lines = explode("\n", $segment);
+        $cleanedLines = [];
+
+        foreach ($lines as $line) {
+            $cleanedLine = str_replace([self::CDATA_OPEN, self::CDATA_CLOSE], '', $line);
+
+            if ($cleanedLine === $line) {
+                $cleanedLines[] = $line;
+                continue;
+            }
+
+            if (trim($cleanedLine) === '') {
+                continue;
+            }
+
+            $cleanedLines[] = preg_replace('/[ \t]+$/', '', $cleanedLine) ?? $cleanedLine;
+        }
+
+        return implode("\n", $cleanedLines);
     }
 }
