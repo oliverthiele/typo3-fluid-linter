@@ -12,6 +12,20 @@
 - [ ] `withoutRules(['rule-id', ...])` — batch disable; convenience wrapper around multiple `disableRule()` calls
 - [ ] Per-file rule overrides via inline comments: `{# fluid-lint-disable typographic-quotes #}` (like eslint-disable)
 
+## Rule refinements
+
+- [ ] **debug-viewhelper**: grade the severity by whether the `f:debug` can actually reach
+      the output. `error` when it sits in a partial, or in a template without `<f:layout>`,
+      outside of every `<f:section>` — those render. `warning` when the template has a
+      layout and the call sits outside any section (the root is never rendered), and `info`
+      (or nothing) inside `<f:comment>`, which the parser empties before it ever runs.
+      Surveyed on a real project: of 38 findings, 24 sat in `<f:comment>` and 11 in
+      layout-using templates outside any section — all silent. The 3 that mattered were in
+      partials, kept quiet only by every caller passing `section="…"`; a single
+      `<f:render partial="…" />` without it would have put two debug boxes and the
+      partial's own `<html>` wrapper into the page. The rule cannot see that difference
+      today and reports all 38 the same way, which is why the group gets ignored.
+
 ## New rules
 
 - [ ] **unused-namespace** — detect `{namespace v=...}` or `xmlns:v="..."` declarations where no `v:` ViewHelper is used in the file; reduces parse overhead and noise
