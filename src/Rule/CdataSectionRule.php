@@ -9,8 +9,15 @@ use OliverThiele\FluidLinter\Result\FixStatus;
 
 final class CdataSectionRule implements FileRuleInterface, FixableFileRuleInterface
 {
-    // CDATA sections inside <f:comment> were the old way to safely comment out Fluid syntax.
-    // Deprecated in Fluid 4 (typo3fluid/fluid < 5.0), removed in Fluid 5 / TYPO3 v14.
+    // CDATA sections inside <f:comment> were the old way to safely comment out Fluid syntax:
+    // CDATA told the parser not to interpret the block at all, so invalid Fluid or a stray
+    // ViewHelper call inside a comment could not break rendering.
+    // CDATA itself is NOT removed in Fluid 5 — what ended is Fluid stripping it from the
+    // template (#108148). The construct therefore no longer comments anything out, and it
+    // writes a deprecation entry on every render from TYPO3 13.4.21 on — in a template set
+    // that used the idiom consistently, that can be a very large number of log entries.
+    // The replacement is a plain <f:comment>, which ignores Fluid syntax errors by itself
+    // since TYPO3 13.3 (#104904).
     // Legitimate CDATA in XML/RSS templates (e.g. <title><![CDATA[...]]></title>) is not flagged.
     // Fluid 5 provides {{{expression}}} as the explicit CDATA-output syntax.
 
@@ -41,7 +48,7 @@ final class CdataSectionRule implements FileRuleInterface, FixableFileRuleInterf
                     $lineNumber = substr_count(substr($content, 0, $cdataOffset), "\n") + 1;
                     $violations[] = [
                         'line' => $lineNumber,
-                        'message' => 'CDATA section inside <f:comment> — deprecated in Fluid 4 and removed in Fluid 5. Use plain <f:comment> without CDATA.',
+                        'message' => 'CDATA section inside <f:comment> — Fluid 5 no longer strips CDATA, so this no longer comments anything out, and it logs a deprecation on every render from TYPO3 13.4.21 on. Use plain <f:comment> without CDATA.',
                         'severity' => 'error',
                     ];
                     break;

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Documentation and messages said CDATA was "deprecated in Fluid 4 and removed in Fluid 5". CDATA is not removed — Fluid 5 stopped *stripping* it (#108148), and gave it a new meaning instead: inside a CDATA section the normal `{...}` syntax is ignored and `{{{...}}}` accesses variables, which is the supported way to inline CSS/JS. What the rule actually detects is therefore narrower than the old wording claimed: the construct no longer comments anything out, and it logs a deprecation on every render from TYPO3 13.4.21 on. The detection and the `--fix` behaviour are unchanged; only the explanation was wrong. Earlier CHANGELOG entries keep the original wording as the historical record.
+- README said `typo3 fluid:analyze` exists since TYPO3 v13. It was introduced in v14.2 (#108763); `fluid:analyse` is a registered alias.
+
 ## [0.8.0] — 2026-08-25
 
 ### Added
